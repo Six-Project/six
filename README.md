@@ -7,7 +7,7 @@
 SIX 是一个跨平台的、可扩展性高、可维护性强的基于机器感知的有限状态机框架。本项目原则为“精简至上”，尽量使用python原生库以保证本项目的可扩展性。
 ## 安装
 ```shell
-pip install six_python
+pip install mini-six
 ```
 ## 使用
 本项目提供插件开发接口，详细操作请见[操作文档](doc/manual-zh-cn.md)。
