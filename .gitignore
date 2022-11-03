@@ -1,0 +1,7 @@
+.idea
+dist
+data/
+image/
+plugins/
+.log
+.env
