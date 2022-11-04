@@ -11,7 +11,7 @@ import os
 from collections import deque
 
 GLOBAL_CONFIG = {
-    "observation_frequency": 0.01,
+    "clock": 0.01,
     "env_fp": ".env",
     "debug": False
 }
