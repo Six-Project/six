@@ -86,12 +86,12 @@ def action(image):
     默认是写在前面的 action 优先执行。
     
     5. 如何定义动作的频率？
-    
+    通过 period 参数定义
 
     参数：
         image：接收到的订阅内容
     """
-    cv.imshow("hello six_python", image)
+    cv.imshow("hello mini-six", image)
     cv.waitKey()
     cv.destroyAllWindows()
 
@@ -136,7 +136,7 @@ config.add(LOCAL_CONFIG)
 使用输入接口的示例代码
 """
 
-import six
+import mini_six as six
 
 six.operation.press_key(0x10010, "\0")  # 按下空格键
 six.operation.release_key(0x10010, "\0")  # 松开空格键

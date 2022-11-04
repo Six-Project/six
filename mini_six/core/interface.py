@@ -25,11 +25,11 @@ from typing import Dict, Callable, List
 __all__ = ["Agent", "Observer"]
 
 config = Config()
-logger = logging.getLogger("six_python")
+logger = logging.getLogger("six")
 
 
 class ObserverRunningEvent(threading.Event):
-    """该事件控制隶属型 Observer 线程的运行"""
+    """该事件控制 Observer 线程的运行"""
     pass
 
 
