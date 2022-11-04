@@ -25,11 +25,11 @@ from typing import Dict, Callable, List
 __all__ = ["Agent", "Observer"]
 
 config = Config()
-logger = logging.getLogger("six_python")
+logger = logging.getLogger("six")
 
 
 class ObserverRunningEvent(threading.Event):
-    """该事件控制隶属型 Observer 线程的运行"""
+    """该事件控制 Observer 线程的运行"""
     pass
 
 
@@ -108,11 +108,11 @@ class Agent(metaclass=abstract.SingleMeta):
 
             """
             为避免出现相除出现浮点数和舍入问题（保证相对精确性），此处 acb 的计时基准
-            为 Observer 的观察周期即：每过一个周期，acb 的 clock_count 加 1，直
-            到等于 period 时，方可执行。
+            为全局时钟周期（下称时间周期）：假设 observer 每观测一次耗费 n 个时间周
+            期，则 acb 的 clock_count 加 n，直到等于 period 时，方可执行。
             """
-            acb.clock_count += 1
-            if acb.clock_count == acb.period:
+            acb.clock_count += obs.period
+            if acb.clock_count >= acb.period:
                 acb.clock_count = 0
 
                 try:
@@ -140,10 +140,11 @@ class Agent(metaclass=abstract.SingleMeta):
             # 将 observer 的 run 方法为改写为受控型
             old_run = _obs_class.run
 
-            def _run(*args, **kwargs):
+            def _run(obs: Observer):
                 while cls._observer_running_event.is_set():
-                    old_run(*args, **kwargs)
-                    time.sleep(config.get("observation_frequency"))
+                    old_run(obs)
+                    # Observer 每观察一次会休眠 period 个时钟周期
+                    time.sleep(obs.period * config.get("clock"))
 
             _obs_class.run = _run
 
@@ -177,7 +178,7 @@ class Observer:
     调用 agent 的 notify 进行, 同一 oid 只能创建一个实例。
     """
 
-    def __init__(self, device_id: int, period: int = 1):
+    def __init__(self, device_id: int, period: int = 5):
         """
         device_id：输入设备句柄/文件
         period：观察周期（每 period ms / 次）
