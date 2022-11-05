@@ -172,7 +172,9 @@ class Agent(metaclass=abstract.SingleMeta):
             logger.info(f"@start-up Observer instance [{type(ocb.observer).__name__}-{device_id}] is working...")
 
         while True:
-            if not config.get("debug"):
+            if config.get("debug"):
+                time.sleep(1)
+            else:
                 ans = input("是否结束程序？(Y/N)\n")
                 if ans.upper() == "Y":
                     break
