@@ -20,7 +20,7 @@ import importlib
 import functools
 import threading
 from dataclasses import dataclass, field
-from typing import Dict, Callable, List
+from typing import Dict, Callable, List, Union, Iterable
 
 __all__ = ["Agent", "Observer"]
 
@@ -67,34 +67,38 @@ class Agent(metaclass=abstract.SingleMeta):
 
         logger.info(f"@start-up Plugin [{plugin_name}] load successfully.")
 
-    def watch(self, source_type, device_id, period=1):
+    def watch(self, source_type, device_id_iter: Union[int, Iterable[int]], period=1):
         """通过 device_id 注册一个 visual observer，可取的值见类属性 support_observation_source_type """
 
         if self.support_observation_source_type[source_type] != "watch":
             raise ValueError(f"Unexpected value source_type={source_type}.")
 
+        if not isinstance(device_id_iter, Iterable):
+            device_id_iter = [device_id_iter]
+
         def _decorator(func):
-            if device_id not in self._device_to_ocb_map:
-                obs_factory = self._observer_factory_map[source_type]
-                obs = obs_factory(device_id)
-                obs.agent = self
-                ocb = ObserverControlBlock(
-                    device_id=device_id, observer=obs,
-                )
-                self._device_to_ocb_map[device_id] = ocb
-                self._device_to_acb_map[device_id] = []
+            for device_id in device_id_iter:
+                if device_id not in self._device_to_ocb_map:
+                    obs_factory = self._observer_factory_map[source_type]
+                    obs = obs_factory(device_id)
+                    obs.agent = self
+                    ocb = ObserverControlBlock(
+                        device_id=device_id, observer=obs,
+                    )
+                    self._device_to_ocb_map[device_id] = ocb
+                    self._device_to_acb_map[device_id] = []
 
-                logger.info("@start-up Observer instance "
-                            f"[{type(ocb.observer).__name__}-{device_id}] is created successfully.")
-            else:
-                ocb = self._device_to_ocb_map[device_id]
+                    logger.info("@start-up Observer instance "
+                                f"[{type(ocb.observer).__name__}-{device_id}] is created successfully.")
+                else:
+                    ocb = self._device_to_ocb_map[device_id]
 
-            acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0], period=period)
-            self._device_to_acb_map[device_id].append(acb)
+                acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0], period=period)
+                self._device_to_acb_map[device_id].append(acb)
 
-            logger.info(
-                f"@start-up Action [{func.__name__}] subscribe to "
-                f"[{type(ocb.observer).__name__}-{device_id}] successfully.")
+                logger.info(
+                    f"@start-up Action [{func.__name__}] subscribe to "
+                    f"[{type(ocb.observer).__name__}-{device_id}] successfully.")
             return func
 
         return _decorator
