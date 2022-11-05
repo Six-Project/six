@@ -8,11 +8,12 @@
 """
 import mini_six.core.abstract as abstract
 import os
+import json
 from collections import deque
 
 GLOBAL_CONFIG = {
     "clock": 0.01,
-    "env_fp": ".env",
+    "env_fp": "env.json",
     "debug": False
 }
 
@@ -38,15 +39,13 @@ class Config(metaclass=abstract.SingleMeta):
 
         self._config[current_layer].update(GLOBAL_CONFIG)
 
-        env_fp = self._config[current_layer]["env_fp"]
+        env_json_fp = self._config[current_layer]["env_fp"]
 
-        if os.path.exists(env_fp):
-            with open(env_fp, "r", encoding="utf-8") as fr:
-                for line in fr.readlines():
-                    line = line.replace("\n", "")
-                    variable_name, value = line.split("=")
+        if os.path.exists(env_json_fp):
+            with open(env_json_fp, "r", encoding="utf-8") as fr:
+                global_static_env = json.load(fr)
 
-            self._config[current_layer][variable_name.lower()] = value
+            self._config[current_layer].update(global_static_env)
 
     def _push(self, env_layer):
         self._env_stack.appendleft(env_layer)
