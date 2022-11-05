@@ -8,6 +8,7 @@
 """
 from mini_six.core import Config  # 加载 Config
 from mini_six.core import Agent  # 加载 Agent
+from mini_six.core import DataSource
 import mini_six.logger  # 加载 log 配置
 import mini_six.portable as portable
 

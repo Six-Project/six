@@ -22,10 +22,14 @@ import threading
 from dataclasses import dataclass, field
 from typing import Dict, Callable, List, Union, Iterable
 
-__all__ = ["Agent", "Observer"]
+__all__ = ["Agent", "Observer", "DataSource"]
 
 config = Config()
 logger = logging.getLogger("six")
+
+
+class DataSource(enum.Enum):
+    SCREENSHOT = "watch"
 
 
 class ObserverRunningEvent(threading.Event):
@@ -34,8 +38,6 @@ class ObserverRunningEvent(threading.Event):
 
 
 class Agent(metaclass=abstract.SingleMeta):
-    support_observation_source_type = {"screenshot": "watch", }
-
     _observer_running_event = ObserverRunningEvent()
 
     def __init__(self):
@@ -52,7 +54,7 @@ class Agent(metaclass=abstract.SingleMeta):
         慢加载内置模块：Agent 必须早于 Observer 加载完
         """
         import mini_six.portable as portable
-        self._observer_factory_map["screenshot"] = portable.win32.observer.ScreenshotObserver
+        self._observer_factory_map[DataSource.SCREENSHOT] = portable.observer.ScreenshotObserver
         logger.info("@start-up Builtin observers load successfully.")
 
     def load_plugin(self, plugin_dir, plugin_name):
@@ -67,11 +69,14 @@ class Agent(metaclass=abstract.SingleMeta):
 
         logger.info(f"@start-up Plugin [{plugin_name}] load successfully.")
 
-    def watch(self, source_type, device_id_iter: Union[int, Iterable[int]], period=1):
-        """通过 device_id 注册一个 visual observer，可取的值见类属性 support_observation_source_type """
+    def watch(self, source_type: DataSource, device_id_iter: Union[int, Iterable[int]], period=1):
+        """通过 device_id 注册一个 visual observer，可取的值见类属性 DataSource """
 
-        if self.support_observation_source_type[source_type] != "watch":
+        if source_type not in DataSource:
             raise ValueError(f"Unexpected value source_type={source_type}.")
+
+        if source_type.value != "watch":
+            raise TypeError(f"{source_type} should use {source_type.value} function.")
 
         if not isinstance(device_id_iter, Iterable):
             device_id_iter = [device_id_iter]
