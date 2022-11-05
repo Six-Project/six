@@ -123,17 +123,19 @@ config.add(LOCAL_CONFIG)
 
 #### 使用输入接口
 
-| 接口用途    | 函数名                        | 适配平台    |
-|---------|----------------------------|---------|
-| 按下键盘按键  | `six.operation.press_key`    | win32 ✅ |
-| 松开键盘按键  | `six.operation.release_key`  | win32 ✅ |
-| 移动鼠标    | `six.operation.move_to`      | win32 ✅ |
-| 按下鼠标左键  | `six.operation.left_down`    | win32 ✅ |
-| 松开鼠标左键  | `six.operation.left_up`      | win32 ✅ |
-| 上滚鼠标滚轮  | `six.operation.scroll_up`    | win32 ✅ |
-| 下滚鼠标滚轮  | `six.operation.scroll_down`  | win32 ✅ |
-| 下滚鼠标滚轮  | `six.operation.scroll_down`  | win32 ✅ |
-| 在某处鼠标滚轮 | `six.operation.scroll`       | win32 ✅ |
+| 接口用途     | 函数名                                   | 适配平台    |
+|----------|---------------------------------------|---------|
+| 按下键盘按键   | `six.operation.press_key`             | win32 ✅ |
+| 松开键盘按键   | `six.operation.release_key`           | win32 ✅ |
+| 单击键盘按键   | `six.operation.click_key`             | win32 ✅ |
+| 单击键盘组合键 | `six.operation.click_combination_key` | win32 ✅ |
+| 移动鼠标     | `six.operation.move_to`               | win32 ✅ |
+| 按下鼠标左键   | `six.operation.left_down`             | win32 ✅ |
+| 松开鼠标左键   | `six.operation.left_up`               | win32 ✅ |
+| 上滚鼠标滚轮   | `six.operation.scroll_up`             | win32 ✅ |
+| 下滚鼠标滚轮   | `six.operation.scroll_down`           | win32 ✅ |
+| 下滚鼠标滚轮   | `six.operation.scroll_down`           | win32 ✅ |
+| 在某处鼠标滚轮  | `six.operation.scroll`                | win32 ✅ |
 
 ```python
 """
