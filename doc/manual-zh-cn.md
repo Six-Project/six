@@ -3,9 +3,11 @@
 ## Hello World
 
 ### 安装 six
+
 ```shell
 pip install mini-six
 ```
+
 ### 获取 six-demo
 
 ```shell
@@ -13,7 +15,9 @@ git clone https://github.com/Six-Project/six-demo.git
 ```
 
 ### 运行
+
 进入项目目录，并运行
+
 ```shell
 python run.py
 ```
@@ -138,7 +142,7 @@ config.add(LOCAL_CONFIG)
 
 import mini_six as six
 
-six.operation.press_key(0x10010, "\0")  # 按下空格键
-six.operation.release_key(0x10010, "\0")  # 松开空格键
+six.operation.press_key(0x10010, six.KEYMAP.VK_SPACE)  # 按下空格键
+six.operation.release_key(0x10010, six.KEYMAP.VK_SPACE)  # 松开空格键
 
 ```

@@ -16,6 +16,7 @@ __all__ = ["watch", "operation", "init", "load_plugin", "run"]
 agent = Agent()
 watch = agent.watch
 operation = portable.operation
+KEYMAP = portable.key_map
 
 
 def init():
