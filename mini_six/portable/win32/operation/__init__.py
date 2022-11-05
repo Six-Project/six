@@ -7,4 +7,5 @@
 
 """
 from .mouse import move_to, left_down, left_up, scroll_up, scroll_down, scroll
+from .key_map import *
 from .keyboard import press_key, release_key
