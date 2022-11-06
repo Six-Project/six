@@ -27,6 +27,7 @@ from mini_six.portable.win32.windll import (
     RECT,
     SRCCOPY,
 )
+from .operation.mouse import left_up, left_down
 
 __all__ = ["ScreenshotObserver"]
 
@@ -56,7 +57,9 @@ class ScreenshotObserver(core.Observer):
 
     def run(self):
         total_bytes = len(self._frame)
+        left_down(self.device_id, 1, 1)
         bitmap = CreateCompatibleBitmap(self._dc, self._width, self._height)
+        left_up(self.device_id, self._width - 1, self._height - 1)
         SelectObject(self._cdc, bitmap)
         BitBlt(self._cdc, 0, 0, self._width, self._height, self._dc, 0, 0, SRCCOPY)
         byte_array = c_ubyte * total_bytes
