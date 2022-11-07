@@ -14,8 +14,9 @@ from ctypes import wintypes
 
 __all__ = ["RECT", "byref", "c_ubyte", "HWND", "POINT", "GetDC", "CreateCompatibleDC", "GetClientRect",
            "CreateCompatibleBitmap", "SetProcessDPIAware", "SelectObject", "BitBlt", "GetBitmapBits",
-           "DeleteObject", "ReleaseDC", "PostMessageW", "ClientToScreen", "SRCCOPY", "WM_MOUSEMOVE",
-           "WM_LBUTTONUP", "WM_LBUTTONDOWN", "WM_MOUSEWHEEL", "WHEEL_DELTA", "WM_KEYUP", "WM_KEYDOWN", "KEY_MAP"]
+           "DeleteObject", "ReleaseDC", "PostMessageW", "ClientToScreen", "SRCCOPY", "SendMessageW", "WM_MOUSEMOVE",
+           "WM_ACTIVATE", "WM_LBUTTONUP", "WM_LBUTTONDOWN", "WM_MOUSEWHEEL", "WHEEL_DELTA", "WM_KEYUP", "WM_KEYDOWN",
+           "KEY_MAP"]
 
 # types
 RECT = wintypes.RECT
@@ -36,10 +37,12 @@ GetBitmapBits = windll.gdi32.GetBitmapBits
 DeleteObject = windll.gdi32.DeleteObject
 ReleaseDC = windll.user32.ReleaseDC
 PostMessageW = windll.user32.PostMessageW
+SendMessageW = windll.user32.SendMessageW
 ClientToScreen = windll.user32.ClientToScreen
 
 SRCCOPY = 0x00CC0020
 
+WM_ACTIVATE = 0x0006
 # Mouse
 WM_MOUSEMOVE = 0x0200
 WM_LBUTTONDOWN = 0x0201
