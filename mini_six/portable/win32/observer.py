@@ -36,7 +36,7 @@ SetProcessDPIAware()
 
 
 @core.Agent.register()
-class ScreenshotObserver(core.Observer):
+class ScreenshotObserver(core.interface._Observer):
     """
     适配 windows 窗口截图
     """
