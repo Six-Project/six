@@ -20,7 +20,7 @@ import importlib
 import functools
 import threading
 from dataclasses import dataclass, field
-from typing import Dict, Callable, List, Union, Iterable
+from typing import Dict, Callable, List, Union, Iterable, Type, Tuple
 
 __all__ = ["Agent", "Observer", "DataSource"]
 
@@ -43,11 +43,11 @@ class Agent(metaclass=abstract.SingleMeta):
     def __init__(self):
         self._observer_factory_map = dict()
 
-        # device_id 与 ocb 具有一对一映射关系
-        self._device_to_ocb_map: Dict[int, ObserverControlBlock] = dict()
+        # (device_id, observer_class_name) 与 ocb 具有一对一映射关系
+        self._device_to_ocb_map: Dict[Tuple[int, str], ObserverControlBlock] = dict()
 
-        # device_id 与 acb 具有一对多映射关系
-        self._device_to_acb_map: Dict[int, List[ActionControlBlock]] = dict()
+        # (device_id, observer_class_name) 与 acb 具有一对多映射关系
+        self._device_to_acb_map: Dict[Tuple[int, str], List[ActionControlBlock]] = dict()
 
     def init(self):
         """
@@ -69,41 +69,41 @@ class Agent(metaclass=abstract.SingleMeta):
 
         logger.info(f"@start-up Plugin [{plugin_name}] load successfully.")
 
-    def watch(self, source_type: DataSource, device_id_iter: Union[int, Iterable[int]], period=1):
+    def watch(self, source_type: Union[DataSource, Type[Observer]], device_id_iter: Union[int, Iterable[int]],
+              period=1):
         """通过 device_id 注册一个 visual observer，可取的值见类属性 DataSource """
 
-        if source_type not in DataSource:
-            raise ValueError(f"Unexpected value source_type={source_type}.")
+        if not isinstance(source_type, DataSource):
+            logger.warning(f"@start-up Use third-party observer {source_type.__name__}.")
+            obs_factory = source_type
+        else:
+            obs_factory = self._observer_factory_map[source_type]
 
-        if source_type.value != "watch":
-            raise TypeError(f"{source_type} should use {source_type.value} function.")
+        obs_cls_name = str(type(obs_factory(0)))
 
         if not isinstance(device_id_iter, Iterable):
             device_id_iter = [device_id_iter]
 
         def _decorator(func):
             for device_id in device_id_iter:
-                if device_id not in self._device_to_ocb_map:
-                    obs_factory = self._observer_factory_map[source_type]
+                if (device_id, obs_cls_name) not in self._device_to_ocb_map:
                     obs = obs_factory(device_id)
                     obs.agent = self
                     ocb = ObserverControlBlock(
                         device_id=device_id, observer=obs,
                     )
-                    self._device_to_ocb_map[device_id] = ocb
-                    self._device_to_acb_map[device_id] = []
+                    self._device_to_ocb_map[(device_id, obs_cls_name)] = ocb
+                    self._device_to_acb_map[(device_id, obs_cls_name)] = []
 
                     logger.info("@start-up Observer instance "
-                                f"[{type(ocb.observer).__name__}-{device_id}] is created successfully.")
-                else:
-                    ocb = self._device_to_ocb_map[device_id]
+                                f"[{obs_cls_name}-{device_id}] is created successfully.")
 
                 acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0], period=period)
-                self._device_to_acb_map[device_id].append(acb)
+                self._device_to_acb_map[(device_id, obs_cls_name)].append(acb)
 
                 logger.info(
                     f"@start-up Action [{func.__name__}] subscribe to "
-                    f"[{type(ocb.observer).__name__}-{device_id}] successfully.")
+                    f"[{obs_cls_name}-{device_id}] successfully.")
             return func
 
         return _decorator
@@ -113,7 +113,7 @@ class Agent(metaclass=abstract.SingleMeta):
         通知所有所有正在监听的 manual-zh-cn.md：同一个 Observer 下的 manual-zh-cn.md 是顺序执行的
         """
         logger.debug(f"@obs-update Observer [{obs.device_id}] update information.")
-        for acb in self._device_to_acb_map[obs.device_id]:
+        for acb in self._device_to_acb_map[(obs.device_id, str(type(obs)))]:
 
             """
             为避免出现相除出现浮点数和舍入问题（保证相对精确性），此处 acb 的计时基准
@@ -164,12 +164,12 @@ class Agent(metaclass=abstract.SingleMeta):
     def run(self):
         self._observer_running_event.set()
 
-        for device_id, ocb in self._device_to_ocb_map.items():
-            t = threading.Thread(name=f"{type(ocb.observer).__name__}-{ocb.observer.device_id}",
+        for key, ocb in self._device_to_ocb_map.items():
+            t = threading.Thread(name=f"{ocb.observer}-{ocb.observer.device_id}",
                                  target=ocb.observer.run, daemon=ocb.daemon)
             t.start()
             ocb.observer_status = ObserverStatus.RUNNING
-            logger.info(f"@start-up Observer instance [{type(ocb.observer).__name__}-{device_id}] is working...")
+            logger.info(f"@start-up Observer instance [{key[1]}-{key[0]}] is working...")
 
         while True:
             if config.get("debug"):
