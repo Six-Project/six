@@ -16,6 +16,7 @@ __all__ = ["watch", "operation", "init", "load_plugin", "run"]
 
 agent = Agent()
 watch = agent.watch
+subscribe_t = agent.subscribe_t
 operation = portable.operation
 KEYMAP = portable.key_map
 

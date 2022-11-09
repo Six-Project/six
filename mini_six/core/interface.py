@@ -20,7 +20,7 @@ import importlib
 import functools
 import threading
 from dataclasses import dataclass, field
-from typing import Dict, Callable, List, Union, Iterable
+from typing import Dict, Callable, List, Union, Iterable, Type
 
 __all__ = ["Agent", "Observer", "DataSource"]
 
@@ -46,8 +46,14 @@ class Agent(metaclass=abstract.SingleMeta):
         # device_id 与 ocb 具有一对一映射关系
         self._device_to_ocb_map: Dict[int, ObserverControlBlock] = dict()
 
+        # 第三方 ocb 映射表：(device_id, observer_class_name) 与 ocb 具有一对一映射关系
+        self._device_to_ocb_map_t: Dict[tuple[int, str], ObserverControlBlock] = dict()
+
         # device_id 与 acb 具有一对多映射关系
         self._device_to_acb_map: Dict[int, List[ActionControlBlock]] = dict()
+
+        # 第三方 acb 映射表：(device_id, observer_class_name) 与 acb 具有一对多映射关系
+        self._device_to_acb_map_t: Dict[tuple[int, str], List[ActionControlBlock]] = dict()
 
     def init(self):
         """
@@ -93,7 +99,7 @@ class Agent(metaclass=abstract.SingleMeta):
                     self._device_to_ocb_map[device_id] = ocb
                     self._device_to_acb_map[device_id] = []
 
-                    logger.info("@start-up Observer instance "
+                    logger.info("@start-up Builtin observer instance "
                                 f"[{type(ocb.observer).__name__}-{device_id}] is created successfully.")
                 else:
                     ocb = self._device_to_ocb_map[device_id]
@@ -108,12 +114,57 @@ class Agent(metaclass=abstract.SingleMeta):
 
         return _decorator
 
+    def subscribe_t(self, t_source: Type[Observer], device_id_iter: Union[int, Iterable[int]], period=1):
+        tmp_obs = t_source(0)
+
+        if not isinstance(tmp_obs, Observer):
+            raise ValueError(f"Unexpected value t_source={t_source}.")
+
+        if not isinstance(device_id_iter, Iterable):
+            device_id_iter = [device_id_iter]
+
+        obs_cls_name = str(type(tmp_obs))
+
+        def _decorator(func):
+            for device_id in device_id_iter:
+                if (device_id, obs_cls_name) not in self._device_to_ocb_map_t:
+                    obs = t_source(device_id)
+                    obs.agent = self
+                    ocb = ObserverControlBlock(
+                        device_id=device_id, observer=obs,
+                    )
+                    self._device_to_ocb_map_t[(device_id, obs_cls_name)] = ocb
+                    self._device_to_acb_map_t[(device_id, obs_cls_name)] = []
+
+                    logger.info("@start-up Third-party observer instance "
+                                f"[{type(ocb.observer).__name__}-{device_id}] is created successfully.")
+                else:
+                    ocb = self._device_to_ocb_map_t[(device_id, obs_cls_name)]
+
+                acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0], period=period)
+                self._device_to_acb_map_t[(device_id, obs_cls_name)].append(acb)
+
+                logger.info(
+                    f"@start-up Action [{func.__name__}] subscribe to "
+                    f"[{type(ocb.observer).__name__}-{device_id}] successfully.")
+            return func
+
+        return _decorator
+
     def notify(self, obs: Observer, data) -> None:
         """
         通知所有所有正在监听的 manual-zh-cn.md：同一个 Observer 下的 manual-zh-cn.md 是顺序执行的
         """
         logger.debug(f"@obs-update Observer [{obs.device_id}] update information.")
-        for acb in self._device_to_acb_map[obs.device_id]:
+
+        if isinstance(obs, Observer):
+            acb_list = self._device_to_acb_map_t[(obs.device_id, str(type(obs)))]
+        elif isinstance(obs, _Observer):
+            acb_list = self._device_to_acb_map[obs.device_id]
+        else:
+            raise ValueError(f"Unexpected value obs={str(type(obs))}.")
+
+        for acb in acb_list:
 
             """
             为避免出现相除出现浮点数和舍入问题（保证相对精确性），此处 acb 的计时基准
@@ -169,7 +220,14 @@ class Agent(metaclass=abstract.SingleMeta):
                                  target=ocb.observer.run, daemon=ocb.daemon)
             t.start()
             ocb.observer_status = ObserverStatus.RUNNING
-            logger.info(f"@start-up Observer instance [{type(ocb.observer).__name__}-{device_id}] is working...")
+            logger.info(f"@start-up Builtin observer instance [{type(ocb.observer).__name__}-{device_id}] is working...")
+
+        for (device_id, obs_cls_name), ocb in self._device_to_ocb_map_t.items():
+            t = threading.Thread(name=f"{obs_cls_name}-{device_id}",
+                                 target=ocb.observer.run, daemon=ocb.daemon)
+            t.start()
+            ocb.observer_status = ObserverStatus.RUNNING
+            logger.info(f"@start-up Third-party observer instance [{obs_cls_name}-{device_id}] is working...")
 
         while True:
             if config.get("debug"):
@@ -183,7 +241,7 @@ class Agent(metaclass=abstract.SingleMeta):
         logger.info(f"@shutdown main thread shutdown successfully.")
 
 
-class Observer:
+class _Observer:
     """
     定义 Observer 的基类，该类负责将外部信息输入到本系统内部，当信息更新后，
     调用 agent 的 notify 进行, 同一 oid 只能创建一个实例。
@@ -202,6 +260,12 @@ class Observer:
         """
         定义 Observer 的单次执行流程，切勿自行内置循环
         """
+        raise NotImplementedError("请重载 run 方法。")
+
+
+class Observer(_Observer):
+
+    def run(self, *args, **kwargs) -> None:
         raise NotImplementedError("请重载 run 方法。")
 
 
