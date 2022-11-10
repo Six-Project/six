@@ -19,6 +19,7 @@ import logging
 import importlib
 import functools
 import threading
+import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, Callable, List, Union, Iterable, Type
 
@@ -28,8 +29,18 @@ config = Config()
 logger = logging.getLogger("six")
 
 
+class DataSourceType(enum.Enum):
+    IMAGE = 0
+
+
 class DataSource(enum.Enum):
-    SCREENSHOT = "watch"
+    SCREENSHOT = DataSourceType.IMAGE
+
+
+@dataclass
+class Image:
+    data: np.ndarray
+    handle: int
 
 
 class ObserverRunningEvent(threading.Event):
@@ -75,14 +86,14 @@ class Agent(metaclass=abstract.SingleMeta):
 
         logger.info(f"@start-up Plugin [{plugin_name}] load successfully.")
 
-    def watch(self, source_type: DataSource, device_id_iter: Union[int, Iterable[int]], period=1):
+    def look(self, source_type: DataSource, device_id_iter: Union[int, Iterable[int]], period=1):
         """通过 device_id 注册一个 visual observer，可取的值见类属性 DataSource """
 
         if source_type not in DataSource:
             raise ValueError(f"Unexpected value source_type={source_type}.")
 
-        if source_type.value != "watch":
-            raise TypeError(f"{source_type} should use {source_type.value} function.")
+        if source_type.value != DataSourceType.IMAGE:
+            raise TypeError(f"Watch function doesn't support {source_type}.")
 
         if not isinstance(device_id_iter, Iterable):
             device_id_iter = [device_id_iter]
@@ -104,7 +115,8 @@ class Agent(metaclass=abstract.SingleMeta):
                 else:
                     ocb = self._device_to_ocb_map[device_id]
 
-                acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0], period=period)
+                acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0],
+                                         datasource_type=DataSourceType.IMAGE, period=period)
                 self._device_to_acb_map[device_id].append(acb)
 
                 logger.info(
@@ -114,7 +126,7 @@ class Agent(metaclass=abstract.SingleMeta):
 
         return _decorator
 
-    def subscribe_t(self, t_source: Type[Observer], device_id_iter: Union[int, Iterable[int]], period=1):
+    def look_t(self, t_source: Type[Observer], device_id_iter: Union[int, Iterable[int]], period=1):
         tmp_obs = t_source(0)
 
         if not isinstance(tmp_obs, Observer):
@@ -141,7 +153,8 @@ class Agent(metaclass=abstract.SingleMeta):
                 else:
                     ocb = self._device_to_ocb_map_t[(device_id, obs_cls_name)]
 
-                acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0], period=period)
+                acb = ActionControlBlock(function=func, subordinate_plugin=config._env_stack[0],
+                                         datasource_type=DataSourceType.IMAGE, period=period)
                 self._device_to_acb_map_t[(device_id, obs_cls_name)].append(acb)
 
                 logger.info(
@@ -177,7 +190,11 @@ class Agent(metaclass=abstract.SingleMeta):
 
                 try:
                     config._push(acb.subordinate_plugin)
-                    acb.function(data)
+
+                    if acb.datasource_type == DataSourceType.IMAGE:
+                        _d = Image(data=data, handle=obs.device_id)
+                        acb.function(_d)
+
                     logger.info(
                         f"@act-done Action [{acb.function.__name__}] react to "
                         f"[{type(obs).__name__}-{obs.device_id}] successfully.")
@@ -220,7 +237,8 @@ class Agent(metaclass=abstract.SingleMeta):
                                  target=ocb.observer.run, daemon=ocb.daemon)
             t.start()
             ocb.observer_status = ObserverStatus.RUNNING
-            logger.info(f"@start-up Builtin observer instance [{type(ocb.observer).__name__}-{device_id}] is working...")
+            logger.info(
+                f"@start-up Builtin observer instance [{type(ocb.observer).__name__}-{device_id}] is working...")
 
         for (device_id, obs_cls_name), ocb in self._device_to_ocb_map_t.items():
             t = threading.Thread(name=f"{obs_cls_name}-{device_id}",
@@ -287,6 +305,7 @@ class ObserverControlBlock:
 class ActionControlBlock:
     function: Callable
     subordinate_plugin: str
+    datasource_type: DataSourceType
     period: int = field(default=1)  # ms 作为单位
     clock_count: int = field(default=0)
     heavy: bool = field(default=False)

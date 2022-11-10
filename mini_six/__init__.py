@@ -8,15 +8,17 @@
 """
 from mini_six.core import Config  # 加载 Config
 from mini_six.core import Agent  # 加载 Agent
-from mini_six.core import DataSource
 import mini_six.logger  # 加载 log 配置
 import mini_six.portable as portable
 
-__all__ = ["watch", "operation", "init", "load_plugin", "run"]
+from mini_six.core import DataSource
+from mini_six.core import Image
+
+__all__ = ["look", "look_t", "operation", "Image", "DataSource"]
 
 agent = Agent()
-watch = agent.watch
-subscribe_t = agent.subscribe_t
+look = agent.look
+look_t = agent.look_t
 operation = portable.operation
 KEYMAP = portable.key_map
 
