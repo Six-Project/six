@@ -6,7 +6,9 @@
 @Introduction: 定义模拟鼠标点击的基本操作
 
 """
-__all__ = ["move_to", "left_down", "left_up", "scroll_up", "scroll_down", "scroll"]
+__all__ = ["move_to", "left_down", "left_up", "scroll_up", "scroll_down", "scroll", "left_click"]
+
+from typing import Union
 
 import mini_six.portable.win32.windll as windll
 
@@ -91,3 +93,8 @@ def scroll_down(handle: windll.HWND, x: int, y: int):
         y (int): 纵坐标
     """
     scroll(handle, -windll.WHEEL_DELTA, x, y)
+
+
+def left_click(handle: Union[int, windll.HWND], x: int, y: int):
+    left_down(handle, x, y)
+    left_up(handle, x, y)

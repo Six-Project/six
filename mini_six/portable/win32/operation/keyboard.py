@@ -10,7 +10,7 @@ from typing import Iterable
 
 from mini_six.portable.win32.windll import PostMessageW, WM_KEYDOWN, WM_KEYUP, KEY_MAP
 
-__all__ = ["press_key", "release_key"]
+__all__ = ["press_key", "release_key", "click_key", "click_combination_key"]
 
 
 def press_key(handle, char: str):
