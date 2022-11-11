@@ -12,7 +12,7 @@ import json
 from collections import deque
 
 GLOBAL_CONFIG = {
-    "clock": 0.01,
+    "clock": 0.1,
     "env_fp": "env.json",
     "debug": False
 }
