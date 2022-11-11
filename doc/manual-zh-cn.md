@@ -56,15 +56,22 @@ Action 是一个 python 函数，它定义了在接收到**源数据流**后的�
 3. Action 订阅对应的设备后，**无需其他请求**即可获取源数据流。
 4. 目前支持以下源数据流接口。
 
-| 源数据流 | 订阅方式                                                | 源数据结构 | 适配平台 |
-|------|-----------------------------------------------------|-------|------|
-| 窗口截图 | `@look(DataSource.SCREENSHOT, handler, period=100)` | 图片    |  win32 ✅ |
+| 源数据流 | 订阅方式                                                                | 源数据结构 | 适配平台 |
+|------|---------------------------------------------------------------------|-------|------|
+| 窗口截图 | `@look(DataSource.SCREENSHOT, handler, [period, subscribe_type])`   | 图片    |  win32 ✅ |
 
 5. 目前支持以下源数据结构
 
 | 源数据结构 | 类名      | 属性                                                |
 |-------|---------|---------------------------------------------------|
 | 图片    | `Image` | - `data(numpy.ndarray)`：数据<br/>- `handle(int)`：句柄 |
+
+6. 目前支持以下订阅方式
+
+| 订阅方式        | 参数               |
+|-------------|------------------|
+| Observer 推送 | `Subscribe.PUSH` |
+| Action 拉取   | `Subscribe.PULL` |
 
 #### 如何定义Action
 
@@ -75,10 +82,10 @@ Action 是一个 python 函数，它定义了在接收到**源数据流**后的�
 import mini_six as six
 import cv2 as cv
 
-from mini_six import look, DataSource, Image
+from mini_six import look, DataSource, Image, SubscribeMode
 
 
-@look(DataSource.SCREENSHOT, 0x10010, period=100)
+@look(DataSource.SCREENSHOT, 0x10010, period=100, subscribe_mode=SubscribeMode.PULL)
 def action(image: Image):
     """
     1. 为什么要写 "six_python.watch" 以及为什么要设置形参 "image"？
@@ -99,6 +106,11 @@ def action(image: Image):
     
     5. 如何定义动作的频率？
     通过 period 参数定义
+    
+    6. subscribe_type 参数是什么？
+    该参数定义数据源的定义方式
+     - SubscribeMode.PUSH 表示由 Observer 主动推送数据给 Action
+     - SubscribeMode.PULL 表示由 Action 向 Observer 主动拉取数据
 
     参数：
         image：接收到的订阅内容
