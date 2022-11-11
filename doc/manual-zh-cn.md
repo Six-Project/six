@@ -79,21 +79,23 @@ Action 是一个 python 函数，它定义了在接收到**源数据流**后的�
 """
 定义 action 的示例代码
 """
-import mini_six as six
 import cv2 as cv
 
 from mini_six import look, DataSource, Image, SubscribeMode
 
 
-@look(DataSource.SCREENSHOT, 0x10010, period=100, subscribe_mode=SubscribeMode.PULL)
+@look(DataSource.SCREENSHOT, 0x10010, period=20, subscribe_mode=SubscribeMode.PULL)
 def action(image: Image):
     """
-    1. 为什么要写 "six_python.watch" 以及为什么要设置形参 "image"？
+    1. 为什么要写 "look" 以及为什么要设置形参 "image"？
 
-    在函数上添加一行 @six_python.watch(six.DataSource.SCREENSHOT, 0x10010,period=100)
-    表示该函数订阅了 0x10010 号设备的 screenshot 内容，且每过 100 个观察周期（默认 1 个观察周期
-    的值为 5 个时钟周期，时钟周期为 10ms 左右，暂时无法精确）接收一次数据，需要用形参 image 去接收
-    该订阅内容。
+    在函数上添加一行 @look(DataSource.SCREENSHOT, 0x10010, period=100,
+    subscribe_mode=SubscribeMode.PULL) 表示该函数订阅了 0x10010 号设备的
+    screenshot 内容，且每过 20 个观察周期（默认 1 个观察周期的值为 1 个时钟周
+    期，时钟周期为 100ms 左右，暂时无法精确）接收一次数据，需要用形参 image 去接收
+    该订阅内容。subscribe_type 参数定义数据源的定义方式
+     - SubscribeMode.PUSH 表示由 Observer 主动推送数据给 Action
+     - SubscribeMode.PULL 表示由 Action 向 Observer 主动拉取数据
     
     2. action 在什么时候执行？
     当 0x10010 设备的 screenshot 信息更新时，调度系统会按一定的顺序调用 action。
