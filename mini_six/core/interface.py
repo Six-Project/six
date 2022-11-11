@@ -293,7 +293,7 @@ class Agent(metaclass=abstract.SingleMeta):
                 self._scheduler.enter(delay, acb.priority, acb.function)
 
         for (device_id, obs_cls_name), acb_list in self._pull_device_to_acb_map_t.items():
-            ocb = self._device_to_ocb_map[(device_id, obs_cls_name)]
+            ocb = self._device_to_ocb_map_t[(device_id, obs_cls_name)]
             for acb in acb_list:
                 delay = ocb.observer.period * acb.period * config.get("clock")
                 self._scheduler.enter(delay, acb.priority, acb.function)
