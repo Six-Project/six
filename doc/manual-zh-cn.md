@@ -56,9 +56,22 @@ Action 是一个 python 函数，它定义了在接收到**源数据流**后的�
 3. Action 订阅对应的设备后，**无需其他请求**即可获取源数据流。
 4. 目前支持以下源数据流接口。
 
-| 源数据流 | 订阅方式                                                         | 适配平台    |
-|------|--------------------------------------------------------------|---------|
-| 窗口截图 | `@six.watch(six.DataSource.SCREENSHOT, handler, period=100)` | win32 ✅ |
+| 源数据流 | 订阅方式                                                                | 源数据结构 | 适配平台 |
+|------|---------------------------------------------------------------------|-------|------|
+| 窗口截图 | `@look(DataSource.SCREENSHOT, handler, [period, subscribe_type])`   | 图片    |  win32 ✅ |
+
+5. 目前支持以下源数据结构
+
+| 源数据结构 | 类名      | 属性                                                |
+|-------|---------|---------------------------------------------------|
+| 图片    | `Image` | - `data(numpy.ndarray)`：数据<br/>- `handle(int)`：句柄 |
+
+6. 目前支持以下订阅方式
+
+| 订阅方式        | 参数               |
+|-------------|------------------|
+| Observer 推送 | `Subscribe.PUSH` |
+| Action 拉取   | `Subscribe.PULL` |
 
 #### 如何定义Action
 
@@ -69,9 +82,11 @@ Action 是一个 python 函数，它定义了在接收到**源数据流**后的�
 import mini_six as six
 import cv2 as cv
 
+from mini_six import look, DataSource, Image, SubscribeMode
 
-@six.watch(six.DataSource.SCREENSHOT, 0x10010, period=100)
-def action(image):
+
+@look(DataSource.SCREENSHOT, 0x10010, period=100, subscribe_mode=SubscribeMode.PULL)
+def action(image: Image):
     """
     1. 为什么要写 "six_python.watch" 以及为什么要设置形参 "image"？
 
@@ -91,11 +106,16 @@ def action(image):
     
     5. 如何定义动作的频率？
     通过 period 参数定义
+    
+    6. subscribe_type 参数是什么？
+    该参数定义数据源的定义方式
+     - SubscribeMode.PUSH 表示由 Observer 主动推送数据给 Action
+     - SubscribeMode.PULL 表示由 Action 向 Observer 主动拉取数据
 
     参数：
         image：接收到的订阅内容
     """
-    cv.imshow("hello mini-six", image)
+    cv.imshow("hello mini-six", image.data)
     cv.waitKey()
     cv.destroyAllWindows()
 
@@ -123,19 +143,20 @@ config.add(LOCAL_CONFIG)
 
 #### 使用输入接口
 
-| 接口用途     | 函数名                                   | 适配平台    |
-|----------|---------------------------------------|---------|
-| 按下键盘按键   | `six.operation.press_key`             | win32 ✅ |
-| 松开键盘按键   | `six.operation.release_key`           | win32 ✅ |
-| 单击键盘按键   | `six.operation.click_key`             | win32 ✅ |
-| 单击键盘组合键 | `six.operation.click_combination_key` | win32 ✅ |
-| 移动鼠标     | `six.operation.move_to`               | win32 ✅ |
-| 按下鼠标左键   | `six.operation.left_down`             | win32 ✅ |
-| 松开鼠标左键   | `six.operation.left_up`               | win32 ✅ |
-| 上滚鼠标滚轮   | `six.operation.scroll_up`             | win32 ✅ |
-| 下滚鼠标滚轮   | `six.operation.scroll_down`           | win32 ✅ |
-| 下滚鼠标滚轮   | `six.operation.scroll_down`           | win32 ✅ |
-| 在某处鼠标滚轮  | `six.operation.scroll`                | win32 ✅ |
+| 接口用途    | 函数名                                   | 适配平台     |
+|---------|---------------------------------------|----------|
+| 按下键盘按键  | `six.operation.press_key`             | win32 ✅  |
+| 松开键盘按键  | `six.operation.release_key`           | win32 ✅  |
+| 单击键盘按键  | `six.operation.click_key`             | win32 ✅  |
+| 单击键盘组合键 | `six.operation.click_combination_key` | win32 ✅  |
+| 移动鼠标    | `six.operation.move_to`               | win32 ✅  |
+| 按下鼠标左键  | `six.operation.left_down`             | win32 ✅  |
+| 松开鼠标左键  | `six.operation.left_up`               | win32 ✅  |
+| 点击鼠标左键  | `six.operation.left_click`            | win32 ✅  |
+| 上滚鼠标滚轮  | `six.operation.scroll_up`             | win32 ✅  |
+| 下滚鼠标滚轮  | `six.operation.scroll_down`           | win32 ✅  |
+| 下滚鼠标滚轮  | `six.operation.scroll_down`           | win32 ✅  |
+| 在某处鼠标滚轮 | `six.operation.scroll`                | win32 ✅  |
 
 ```python
 """
