@@ -12,9 +12,10 @@ import mini_six.logger  # 加载 log 配置
 import mini_six.portable as portable
 
 from mini_six.core import DataSource
+from mini_six.core import SubscribeMode
 from mini_six.core import Image
 
-__all__ = ["look", "look_t", "operation", "Image", "DataSource"]
+__all__ = ["look", "look_t", "operation", "Image", "DataSource", "SubscribeMode"]
 
 agent = Agent()
 look = agent.look

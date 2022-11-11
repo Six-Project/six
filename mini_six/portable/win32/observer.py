@@ -47,23 +47,24 @@ class ScreenshotObserver(core.interface._Observer):
         r = RECT()
         GetClientRect(device_id, byref(r))
         self._width, self._height = r.right, r.bottom
-        self._frame = bytearray(self._width * self._height * 4)
 
-        self._dc = GetDC(device_id)
-        self._cdc = CreateCompatibleDC(self._dc)
-
-    def __del__(self):
-        DeleteObject(self._cdc)
-        ReleaseDC(self.device_id, self._dc)
-
-    def run(self):
-        total_bytes = len(self._frame)
+    def pull(self):
+        _frame = bytearray(self._width * self._height * 4)
+        _dc = GetDC(self.device_id)
+        _cdc = CreateCompatibleDC(_dc)
+        total_bytes = len(_frame)
         SendMessageW(self.device_id, WM_ACTIVATE, 1, 0)
-        bitmap = CreateCompatibleBitmap(self._dc, self._width, self._height)
-        SelectObject(self._cdc, bitmap)
-        BitBlt(self._cdc, 0, 0, self._width, self._height, self._dc, 0, 0, SRCCOPY)
+        bitmap = CreateCompatibleBitmap(_dc, self._width, self._height)
+        SelectObject(_cdc, bitmap)
+        BitBlt(_cdc, 0, 0, self._width, self._height, _dc, 0, 0, SRCCOPY)
         byte_array = c_ubyte * total_bytes
-        GetBitmapBits(bitmap, total_bytes, byte_array.from_buffer(self._frame))
+        GetBitmapBits(bitmap, total_bytes, byte_array.from_buffer(_frame))
         DeleteObject(bitmap)
-        image = np.frombuffer(self._frame, dtype=np.uint8).reshape(self._height, self._width, 4)
+        image = np.frombuffer(_frame, dtype=np.uint8).reshape(self._height, self._width, 4)
+        DeleteObject(_cdc)
+        ReleaseDC(self.device_id, _dc)
+        return image
+
+    def push(self):
+        image = self.pull()
         self.agent.notify(self, image)
