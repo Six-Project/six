@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger("six")
 logger.setLevel(logging.INFO)
 # create file handler which logs even debug messages
-fh = logging.FileHandler(".log")
+fh = logging.FileHandler("six.log")
 fh.setLevel(logging.INFO)
 # create console handler with a higher log level
 ch = logging.StreamHandler()

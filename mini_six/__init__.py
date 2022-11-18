@@ -15,7 +15,7 @@ from mini_six.core import DataSource
 from mini_six.core import SubscribeMode
 from mini_six.core import Image
 
-__all__ = ["look", "look_t", "operation", "Image", "DataSource", "SubscribeMode"]
+__all__ = ["look", "look_t", "operation", "Image", "DataSource", "SubscribeMode", "Config"]
 
 agent = Agent()
 look = agent.look

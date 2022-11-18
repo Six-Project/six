@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mini-six"
-version = "0.1.2"
+version = "0.1.4"
 description = "A cross-platform, highly scalable, maintainable, machine-aware, machine-aware, limited state machine framework."
 authors = ["TsangHans <gzzenghan@189.cn>"]
 license = "MIT"
