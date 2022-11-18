@@ -15,7 +15,7 @@ default = true
 
 [tool.poetry.dependencies]
 python = "^3.7"
-numpy = "1.21"
+numpy = "1.21.6"
 opencv-python = "4.4.0.46"
 
 
