@@ -23,7 +23,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, Callable, List, Union, Iterable, Type
 
-__all__ = ["Agent", "Observer", "DataSource", "SubscribeMode"]
+__all__ = ["Agent", "Observer", "DataSource", "SubscribeMode", "Image"]
 
 config = Config()
 logger = logging.getLogger("six")
@@ -137,6 +137,7 @@ class Agent(metaclass=abstract.SingleMeta):
                                 f"[{type(ocb.observer).__name__}-{device_id}] is created successfully.")
                 else:
                     ocb = self._device_to_ocb_map[device_id]
+                    obs = ocb.observer
 
                 if subscribe_mode == SubscribeMode.PULL:
                     @functools.wraps(func)
