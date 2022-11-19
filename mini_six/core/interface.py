@@ -11,6 +11,7 @@ from __future__ import annotations
 from mini_six.core.config import Config
 import mini_six.core.abstract as abstract
 
+import asyncio
 import sys
 import sched
 import enum
@@ -32,6 +33,7 @@ logger = logging.getLogger("six")
 class SubscribeMode(enum.Enum):
     PULL = 0
     PUSH = 1
+    CORO_PULL = 2
 
 
 class DataSourceType(enum.Enum):
@@ -77,6 +79,9 @@ class Agent(metaclass=abstract.SingleMeta):
         # 第三方 acb 映射表：(device_id, observer_class_name) 与 acb 具有一对多映射关系
         self._pull_device_to_acb_map_t: Dict[tuple[int, str], List[ActionControlBlock]] = dict()
 
+        # 引入协程事件循环，在多智能体协同动作下有着重要作用
+        self._event_loop = asyncio.get_event_loop()
+
     def init(self):
         """
         慢加载内置模块：Agent 必须早于 Observer 加载完
@@ -111,7 +116,7 @@ class Agent(metaclass=abstract.SingleMeta):
 
         if subscribe_mode == SubscribeMode.PUSH:
             device_to_acb_map = self._push_device_to_acb_map
-        elif subscribe_mode == SubscribeMode.PULL:
+        elif subscribe_mode in [SubscribeMode.PULL, SubscribeMode.CORO_PULL]:
             device_to_acb_map = self._pull_device_to_acb_map
         else:
             raise ValueError(f"Unexpected value subscribe_mode={subscribe_mode}.")
@@ -152,13 +157,26 @@ class Agent(metaclass=abstract.SingleMeta):
                         self._scheduler.enter(delay, priority, inner_func)
                         return res
 
+                elif subscribe_mode == SubscribeMode.CORO_PULL:
+                    @functools.wraps(func)
+                    async def inner_func():
+                        while True:
+                            data = obs.pull()
+                            image = Image(data=data, handle=device_id)
+                            await func(image)
+                            logger.info(
+                                f"@act-done Coroutine action [{acb.function.__name__}] react to "
+                                f"[{type(obs).__name__}-{obs.device_id}] successfully.")
+                            delay = ocb.observer.period * period * config.get("clock")
+                            await asyncio.sleep(delay)
+
                 acb = ActionControlBlock(function=inner_func, subordinate_plugin=config._env_stack[0],
                                          datasource_type=DataSourceType.IMAGE, period=period, priority=priority,
                                          subscribe_mode=subscribe_mode)
                 device_to_acb_map[device_id].append(acb)
 
                 logger.info(
-                    f"@start-up Action [{inner_func.__name__}] subscribe to "
+                    f"@start-up Coroutine action [{inner_func.__name__}] subscribe to "
                     f"[{type(ocb.observer).__name__}-{device_id}] successfully.")
             return inner_func
 
@@ -291,25 +309,25 @@ class Agent(metaclass=abstract.SingleMeta):
             ocb = self._device_to_ocb_map[device_id]
             for acb in acb_list:
                 delay = ocb.observer.period * acb.period * config.get("clock")
-                self._scheduler.enter(delay, acb.priority, acb.function)
+                if acb.subscribe_mode == SubscribeMode.PULL:
+                    self._scheduler.enter(delay, acb.priority, acb.function)
+                elif acb.subscribe_mode == SubscribeMode.CORO_PULL:
+                    self._event_loop.create_task(acb.function())
 
         for (device_id, obs_cls_name), acb_list in self._pull_device_to_acb_map_t.items():
             ocb = self._device_to_ocb_map_t[(device_id, obs_cls_name)]
             for acb in acb_list:
                 delay = ocb.observer.period * acb.period * config.get("clock")
-                self._scheduler.enter(delay, acb.priority, acb.function)
+                if acb.subscribe_mode == SubscribeMode.PULL:
+                    self._scheduler.enter(delay, acb.priority, acb.function)
+                elif acb.subscribe_mode == SubscribeMode.CORO_PULL:
+                    self._event_loop.create_task(acb.function())
 
         t = threading.Thread(name="scheduler", target=self._scheduler.run, daemon=True)
         t.start()
         logger.info(f"@start-up Scheduler is working...")
 
-        while True:
-            if config.get("debug"):
-                time.sleep(1)
-            else:
-                ans = input("是否结束程序？(Y/N)\n")
-                if ans.upper() == "Y":
-                    break
+        self._event_loop.run_forever()
         self._observer_running_event.clear()
 
         logger.info(f"@shutdown main thread shutdown successfully.")

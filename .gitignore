@@ -4,5 +4,5 @@ test
 data/
 image/
 plugins/
-.log
+*.log
 thirdparty
