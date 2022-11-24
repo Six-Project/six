@@ -11,8 +11,7 @@ from __future__ import annotations
 from mini_six.core.config import Config
 import mini_six.core.abstract as abstract
 
-import asyncio
-import sys
+
 import sched
 import enum
 import time
@@ -24,7 +23,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, Callable, List, Union, Iterable
 
-__all__ = ["Agent", "Observer", "DataSourceType", "SubscribeData", "load_plugin"]
+__all__ = ["Agent", "Observer", "DataSourceType", "SubscribeData"]
 
 config = Config()
 logger = logging.getLogger("six")
@@ -73,17 +72,7 @@ def publisher_executor_factory(scb: SubscribeControlBlock):
     return run
 
 
-def load_plugin(plugin_dir, plugin_name):
-    """
-    按路径加载第三方模块
-    """
-    sys.path.append(plugin_dir)
-    config._push(plugin_name)
-    importlib.import_module(plugin_name)
-    config._pop()
-    sys.path.remove(plugin_dir)
 
-    logger.info(f"@start-up Plugin [{plugin_name}] load successfully.")
 
 
 class Agent(metaclass=abstract.SingleMeta):
