@@ -35,7 +35,6 @@ __all__ = ["ScreenshotObserver"]
 SetProcessDPIAware()
 
 
-@core.Agent.register()
 class ScreenshotObserver(core.interface._Observer):
     """
     适配 windows 窗口截图
@@ -65,6 +64,3 @@ class ScreenshotObserver(core.interface._Observer):
         ReleaseDC(self.device_id, _dc)
         return image
 
-    def push(self):
-        image = self.pull()
-        self.agent.notify(self, image)

@@ -8,7 +8,6 @@
 """
 from .interface import Agent
 from .interface import Observer
-from .interface import DataSource
-from .interface import SubscribeMode
-from .interface import Image
+from .interface import SubscribeData
+from .interface import DataSourceType
 from .config import Config
