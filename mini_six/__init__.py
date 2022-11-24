@@ -11,21 +11,15 @@ from mini_six.core import Agent  # 加载 Agent
 import mini_six.logger  # 加载 log 配置
 import mini_six.portable as portable
 
-from mini_six.core import DataSource
-from mini_six.core import SubscribeMode
-from mini_six.core import Image
+from mini_six.core import DataSourceType
+from mini_six.core import SubscribeData
 
-__all__ = ["look", "look_t", "operation", "Image", "DataSource", "SubscribeMode", "Config"]
+__all__ = ["subscribe", "operation", "DataSourceType", "SubscribeData", "Config"]
 
 agent = Agent()
-look = agent.look
-look_t = agent.look_t
+subscribe = agent.subscribe
 operation = portable.operation
 KEYMAP = portable.key_map
-
-
-def init():
-    agent.init()
 
 
 def load_plugin(plugin_dir, plugin_name):
@@ -33,7 +27,7 @@ def load_plugin(plugin_dir, plugin_name):
     通过文件路径加载插件
     :return:
     """
-    agent.load_plugin(plugin_dir, plugin_name)
+    load_plugin(plugin_dir, plugin_name)
 
 
 def run():

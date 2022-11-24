@@ -1,36 +1,27 @@
-import asyncio
 import time
-
-import mini_six as six
 import cv2 as cv
+import mini_six as six
 
-from mini_six import look, DataSource, Image, SubscribeMode
+from mini_six import subscribe, DataSourceType, SubscribeData
+from mini_six.portable.win32.observer import ScreenshotObserver
 
-six.init()
+data_source = subscribe(source_type_dict={DataSourceType.IMAGE: ScreenshotObserver}, device_id_iter=0x10010)
 
 
-@look(DataSource.SCREENSHOT, 0x10010, period=20, subscribe_mode=SubscribeMode.PULL)
-def action_1(image: Image):
+@data_source(priority=2)
+def action_1(data: SubscribeData):
+    cv.imshow("action_1", data.image)
+    cv.waitKey()
     print("normal function 1 working:")
     time.sleep(5)
 
 
-@look(DataSource.SCREENSHOT, 0x10010, period=20, subscribe_mode=SubscribeMode.PULL)
-def action_2(image: Image):
+@data_source(priority=1)
+def action_2(data: SubscribeData):
+    cv.imshow("action_2", data.image)
+    cv.waitKey()
     print("normal function 2 working:")
     time.sleep(5)
-
-
-@look(DataSource.SCREENSHOT, 0x10010, period=20, subscribe_mode=SubscribeMode.CORO_PULL)
-async def coro_action_1(image: Image):
-    print("coro 1 working:")
-    await asyncio.sleep(5)
-
-
-@look(DataSource.SCREENSHOT, 0x10010, period=20, subscribe_mode=SubscribeMode.CORO_PULL)
-async def coro_action_2(image: Image):
-    print("coro 2 working:")
-    await asyncio.sleep(5)
 
 
 six.run()
